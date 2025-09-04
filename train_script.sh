@@ -1,0 +1,33 @@
+accelerate launch train.py \
+    --experiment_name 'ViT_LoRA_Temporal_UCF101_Training' \
+    --working_directory 'work_dir' \
+    --path_to_data "data/ucf101" \
+    --checkpoint_dir 'checkpoints' \
+    --hf_model_name 'google/vit-base-patch16-224' \
+    --lora_rank 4 \
+    --lora_alpha 8 \
+    --lora_use_rslora \
+    --lora_dropout 0.1 \
+    --lora_bias 'lora_only' \
+    --lora_target_modules 'patch_embd,q,k,v,linear1,linear2' \
+    --lora_exclude_modules 'head' \
+    --max_grad_norm 1.0 \
+    --per_gpu_batch_size 144 \
+    --gradient_accumulation_steps 8 \
+    --warmup_epochs 3 \
+    --epochs 150 \
+    --save_checkpoint_interval 1 \
+    --learning_rate 3e-5 \
+    --weight_decay 0.1 \
+    --adam_beta1 0.9 \
+    --adam_beta2 0.98 \
+    --adam_epsilon 1e-6 \
+    --max_no_of_checkpoints 3 \
+    --img_size 224 \
+    --num_workers 12 \
+    --top_k 5 \
+    --n_frames 18 \
+    --custom_weight_init \
+    --log_wandb \
+    --resume_from_checkpoint 'checkpoint_126'
+
