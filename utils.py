@@ -98,6 +98,15 @@ def transforms_training(img_wh=224,
         v2.Normalize(mean=img_mean, std=img_std)
     ])
 
+def transform_inference(img_wh=224,
+                        interpolation=InterpolationMode.BILINEAR,
+                        resize_wh=256):
+    return Compose([
+        v2.Resize((resize_wh, resize_wh), interpolation=interpolation, antialias=True),
+        v2.CenterCrop((img_wh, img_wh)),
+        v2.PILToTensor()
+    ])
+
 def mixup_cutmix_collate_func(mixup_alpha=0.2,
                               cutmix_alpha=1.0,
                               num_classes=1000):
