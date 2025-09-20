@@ -13,14 +13,14 @@ from torch.utils.data import DataLoader
 from accelerate import Accelerator
 from transformers import get_cosine_schedule_with_warmup, ViTModel
 
-from lora import LoRAConfig, LoRAModel
-from model import VisionTransformer, ViTConfig
-from utils import (VideoFolder,
-                   transforms_training,
-                   transforms_testing,
-                   mixup_cutmix_collate_func,
-                   accuracy,
-                   map_state_dict)
+from src.lora import LoRAConfig, LoRAModel
+from src.model import VisionTransformer, ViTConfig
+from src.utils import (VideoFolder,
+                       transforms_training,
+                       transforms_testing,
+                       mixup_cutmix_collate_func,
+                       accuracy,
+                       map_state_dict)
 
 
 def add_arguments(parser):

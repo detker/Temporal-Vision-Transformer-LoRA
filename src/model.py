@@ -1,6 +1,5 @@
 import math
 from dataclasses import dataclass
-from typing import Union
 
 import torch
 import torch.nn as nn

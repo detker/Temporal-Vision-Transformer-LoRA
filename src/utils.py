@@ -182,18 +182,3 @@ def accuracy(outputs,
         top_k_accuracy = correct_preds.sum(dtype=torch.float32) / batch_size # top_k
 
     return top_1_accuracy, top_k_accuracy
-
-
-if __name__ == '__main__':
-    from torchvision.datasets import ImageFolder
-    from torch.utils.data import DataLoader
-
-    transforms_training = transforms_testing()
-    data = ImageFolder('../../../data/PetImages', transform=transforms_training)
-
-    collate_fn = mixup_cutmix_collate_func(num_classes=2)
-    loader = DataLoader(data, batch_size=4, collate_fn=collate_fn, shuffle=True)
-
-    samples = next(iter(loader))
-    dummy = torch.rand(size=(4, 1000))
-    print(accuracy(dummy, samples[1], top_k=5))
