@@ -1,6 +1,6 @@
 # Temporal Visual Transformer with LoRA - UCF101 Training
 
-[![Hugging Face Model](https://img.shields.io/badge/HuggingFace-Model%20Weights-blue)](https://huggingface.co/lorem-ipsum)
+[![Hugging Face Model](https://img.shields.io/badge/HuggingFace-Model%20Weights-blue)](https://huggingface.co/detker/temporal-vit-85M)
 
 ## 📋 Table of Contents
 
@@ -23,6 +23,8 @@ This repository contains the implementation of a Vision Transformer (ViT) model 
 ```
 .
 ├── src/
+├── notebooks/
+├── wandb/
 ├── data/
 │   ├── train/
 │   ├── val/
@@ -33,7 +35,23 @@ This repository contains the implementation of a Vision Transformer (ViT) model 
 ```
 
 ### 📦 Model Weights
-Pretrained model weights are available on Hugging Face: [ViT-LoRA Temporal Weights](https://huggingface.co/lorem-ipsum)
+Pretrained model weights are available on Hugging Face: [ViT-LoRA Temporal Weights](https://huggingface.co/detker/temporal-vit-85M)
+
+You can load the model using Hugging Face's `AutoModel` and `AutoConfig` classes:
+
+```python
+from transformers import AutoModel, AutoConfig
+
+# Load the configuration
+config = AutoConfig.from_pretrained("detker/temporal-vit-lora")
+
+# Load the model
+model = AutoModel.from_pretrained("detker/temporal-vit-lora", config=config)
+
+# Example usage
+inputs = ...  # Prepare your input tensor
+outputs = model(inputs)
+```
 
 ## ⚙️ Setup & Usage
 
