@@ -41,12 +41,15 @@ You can load the model using Hugging Face's `AutoModel` and `AutoConfig` classes
 
 ```python
 from transformers import AutoModel, AutoConfig
+from hf_pretrained_model import TemporalViTConfig, TemporalViTHF
 
-# Load the configuration
-config = AutoConfig.from_pretrained("detker/temporal-vit-lora")
+# Register model
+AutoConfig.register('temporal-vit', TemporalViTConfig)
+AutoModel.register(TemporalViTConfig, TemporalViTHF)
 
 # Load the model
-model = AutoModel.from_pretrained("detker/temporal-vit-lora", config=config)
+model = AutoModel.from_pretrained('detker/temporal-vit-85M',
+                                  trust_remote_code=True)
 
 # Example usage
 inputs = ...  # Prepare your input tensor

@@ -1,19 +1,20 @@
+import sys
 import cv2
 import gradio as gr
 import torch
 import torch.nn.functional as F
 from PIL import Image
 from matplotlib import pyplot as plt
-from safetensors.torch import load_file
 
+sys.path.append('../')
 from src.utils import transform_inference, transforms_testing, VideoFolder
-from src.model import VisionTransformer, ViTConfig
+from hf_pretrained_model import TemporalViTConfig, TemporalViTHF
+from transformers import AutoModel, AutoConfig
 
 
-CLIP_LOC = 'data/test'
+CLIP_LOC = '../data/test'
 N_FRAMES = 18
 IMG_WH = 224
-WEIGHTS_LOC = 'work_dir/ViT_LoRA_Temporal_UCF101_Training/checkpoints/checkpoint_merged_fin.safetensors'
 
 test_transforms = transforms_testing(img_wh=IMG_WH)
 inference_transforms = transform_inference(img_wh=IMG_WH)
@@ -22,11 +23,12 @@ test_data = VideoFolder(path_to_data=CLIP_LOC,
                         transform=test_transforms)
 num_classes = len(test_data.idx2class.keys())
 idx2class = test_data.idx2class
-config = ViTConfig(n_frames=18,
-                   num_classes=num_classes)
-model = VisionTransformer(config)
-state_dict = load_file(WEIGHTS_LOC)
-model.load_state_dict(state_dict)
+AutoConfig.register('temporal-vit', TemporalViTConfig)
+AutoModel.register(TemporalViTConfig, TemporalViTHF)
+
+model = AutoModel.from_pretrained('detker/temporal-vit-85M',
+                                  trust_remote_code=True,
+                                  use_safetensors=True)
 
 def generate_plots(frames, ax, dim=3):
     for i in range(0, dim):
