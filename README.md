@@ -2,6 +2,9 @@
 
 [![Hugging Face Model](https://img.shields.io/badge/HuggingFace-Model%20Weights-blue)](https://huggingface.co/detker/temporal-vit-85M)
 
+
+![](imgs/vit_highlevel.png)
+
 ## 📋 Table of Contents
 
 - [Overview](#overview)

@@ -238,7 +238,7 @@ transforms_testing = transforms_testing(img_wh=args.img_size)
 train_data = VideoFolder(os.path.join(experiment_path, args.path_to_data, 'train'),
                          transform=transforms_training,
                          frames_n=args.n_frames)
-test_data = VideoFolder(os.path.join(experiment_path, args.path_to_data, 'val'),
+test_data = VideoFolder(os.path.join(experiment_path, args.path_to_data, 'test'),
                         transform=transforms_testing,
                         frames_n=args.n_frames)
 
