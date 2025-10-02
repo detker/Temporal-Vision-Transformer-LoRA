@@ -1,3 +1,4 @@
+import os
 import sys
 import cv2
 import gradio as gr
@@ -6,7 +7,7 @@ import torch.nn.functional as F
 from PIL import Image
 from matplotlib import pyplot as plt
 
-sys.path.append('../')
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from src.utils import transform_inference, transforms_testing, VideoFolder
 from hf_pretrained_model import TemporalViTConfig, TemporalViTHF
 from transformers import AutoModel, AutoConfig

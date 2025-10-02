@@ -21,6 +21,8 @@ This repository contains the implementation of a Vision Transformer (ViT) model 
 - **LoRA Integration**: Efficient fine-tuning of large models with low-rank adaptation.
 - **Temporal Video Classification**: Handles video data with temporal dynamics.
 - **Customizable Training**: Supports various hyperparameters and configurations.
+- **Distributed Data Parallelism**: Training can be performed on a multi-GPU setup using the `accelerate` library.
+- **Ready-to-Go Inference**: Supports loading model through Hugging Face's `transformers` library
 
 ### 📂 Project Structure
 ```
@@ -71,8 +73,8 @@ Ensure you have the following installed:
 ### Installation
 Clone the repository and set up the environment:
 ```bash
-git clone https://github.com/detker/ViTLoRATemporal
-cd ViTLoRATemporal
+git clone https://github.com/detker/Temporal-Vision-Transformer-LoRA
+cd Temporal-Vision-Transformer-LoRA
 conda create -n vit_lora python=3.11.4
 conda activate vit_lora
 pip install -r requirements.txtl
@@ -87,6 +89,18 @@ chmod +x download_data.sh
 ```
 
 ## 🚀 Training 
+The available weights were obtained by training on a single RTX 5090 GPU for approximately 150 epochs.  
+
+Possible improvements include:  
++ Further training, as both training and testing losses continue to decrease.  
++ Increasing the number of frames the model processes.  
++ Making the framing process more intelligent.  
++ Training on a larger dataset with significantly more classes.  
+
+Below we present loss visualization taken from wandb platform.
+
+<img src="imgs/train_loss.png" width="680"/>
+
 To train the model, use the `train_script.sh` shell script. Customize the training parameters in the script as needed. Example:
 
 ```bash
@@ -98,54 +112,48 @@ Checkpoints are saved periodically in the `{working_directory}/{experiment_name}
 
 Training parameters include:
 
-| **Parameter**               | **Description**                                                                 | **Default**       | **Type**            |
-|-----------------------------|---------------------------------------------------------------------------------|-------------------|---------------------|
-| `--experiment_name`         | Name of Experiment being Launched                                              | **Required**      | `str`               |
-| `--path_to_data`            | Path to UCF101 root folder containing `train` and `val` folders                 | **Required**      | `str`               |
-| `--working_directory`       | Directory for checkpoints and logs                                             | **Required**      | `str`               |
-| `--checkpoint_dir`          | Directory for checkpoints and logs                                             | **Required**      | `str`               |
-| `--hf_model_name`           | Base Google's ViT HF model name                                                | **Required**      | `str`               |
-| `--lora_rank`               | Rank of the LoRA adaptation matrices                                           | `8`               | `int`               |
-| `--lora_alpha`              | Alpha scaling factor for LoRA                                                  | `8`               | `int`               |
-| `--lora_use_rslora`         | Whether to use RS-LoRA                                                         | `False`           | `bool`              |
-| `--lora_dropout`            | Dropout rate for LoRA layers                                                   | `0.1`             | `float`             |
-| `--lora_bias`               | Bias configuration for LoRA                                                    | `'none'`          | `str` (choices: `none`, `lora_only`, `all`) |
-| `--lora_target_modules`     | Comma-separated list of target modules for LoRA                                | **None**          | `list`              |
-| `--lora_exclude_modules`    | Comma-separated list of modules to exclude from LoRA                           | **None**          | `list`              |
-| `--epochs`                  | Number of Epochs to Train                                                      | `300`             | `int`               |
-| `--warmup_epochs`           | Number of warmup Epochs                                                        | `30`              | `int`               |
-| `--save_checkpoint_interval`| Interval (in epochs) to save model checkpoints                                 | `1`               | `int`               |
-| `--per_gpu_batch_size`      | Effective batch size                                                           | `256`             | `int`               |
-| `--gradient_accumulation_steps` | Number of Gradient Accumulation Steps for Training                        | `1`               | `int`               |
-| `--learning_rate`           | Max Learning rate for cosine scheduler                                         | `0.003`           | `float`             |
-| `--weight_decay`            | Weight decay for optimizer                                                     | `0.1`             | `float`             |
-| `--random_aug_magnitude`    | Magnitude of random augments                                                   | `9`               | `int`               |
-| `--mixup_alpha`             | Alpha parameter for Beta distribution for mixup lambda                         | `1.0`             | `float`             |
-| `--cutmix_alpha`            | Alpha parameter for Beta distribution for cutmix lambda                        | `1.0`             | `float`             |
-| `--label_smoothing`         | Smooths labels when computing loss                                             | `0`               | `float`             |
-| `--custom_weight_init`      | Initialize the model with truncated normal layers                              | `False`           | `bool`              |
-| `--bias_weight_decay`       | Apply weight decay to bias                                                     | `False`           | `bool`              |
-| `--norm_weight_decay`       | Apply weight decay to normalization weight and bias                            | `False`           | `bool`              |
-| `--max_grad_norm`           | Maximum norm for gradient clipping                                             | `1.0`             | `float`             |
-| `--img_size`                | Width and Height of Images passed to model                                     | `224`             | `int`               |
-| `--num_workers`             | Number of workers for DataLoader                                               | `32`              | `int`               |
-| `--adam_beta1`              | Beta1 parameter for Adam optimizer                                             | `0.9`             | `float`             |
-| `--adam_beta2`              | Beta2 parameter for Adam optimizer                                             | `0.999`           | `float`             |
-| `--adam_epsilon`            | Epsilon parameter for Adam optimizer                                           | `1e-8`            | `float`             |
-| `--log_wandb`               | Log metrics to Weights & Biases                                                | `False`           | `bool`              |
-| `--resume_from_checkpoint`  | Checkpoint folder to resume training from                                      | **None**          | `str`               |
-| `--top_k`                   | Top k classes to retrieve while accuracy calculation                           | `5`               | `int`               |
-| `--max_no_of_checkpoints`   | Max number of latest checkpoints to store on disk                              | `10`              | `int`               |
-| `--n_frames`                | Constant number of frames to extract from each clip                            | `8`               | `int`               |
-
-
-## 📊 Evaluation
-Evaluate the model on the validation set using the same script. Modify the `--resume_from_checkpoint` parameter to load a specific checkpoint:
-```bash
-./train_script.sh --resume_from_checkpoint 'checkpoint_10'
-```
+| **Parameter**               | **Description**                                                 | **Default**       | **Type**            |
+|-----------------------------|-----------------------------------------------------------------|-------------------|---------------------|
+| `--experiment_name`         | Name of Experiment                                              | **Required**      | `str`               |
+| `--path_to_data`            | Path to UCF101 root folder containing `train` and `val` folders | **Required**      | `str`               |
+| `--working_directory`       | Directory for checkpoints and logs                              | **Required**      | `str`               |
+| `--checkpoint_dir`          | Directory for checkpoints                                       | **Required**      | `str`               |
+| `--hf_model_name`           | Base Google's ViT HF model name                                 | **Required**      | `str`               |
+| `--lora_rank`               | Rank of the LoRA adaptation matrices                            | `8`               | `int`               |
+| `--lora_alpha`              | Alpha scaling factor for LoRA                                   | `8`               | `int`               |
+| `--lora_use_rslora`         | Whether to use RS-LoRA                                          | `False`           | `bool`              |
+| `--lora_dropout`            | Dropout rate for LoRA                                           | `0.1`             | `float`             |
+| `--lora_bias`               | Bias configuration for LoRA                                     | `'none'`          | `str` (choices: `none`, `lora_only`, `all`) |
+| `--lora_target_modules`     | Comma-separated list of target modules for LoRA                 | **None**          | `list`              |
+| `--lora_exclude_modules`    | Comma-separated list of modules to exclude from LoRA            | **None**          | `list`              |
+| `--epochs`                  | Number of Epochs                                                | `300`             | `int`               |
+| `--warmup_epochs`           | Number of warmup Epochs                                         | `30`              | `int`               |
+| `--save_checkpoint_interval`| Interval (in epochs) to save model checkpoints                  | `1`               | `int`               |
+| `--per_gpu_batch_size`      | Batch size per GPU                                              | `256`             | `int`               |
+| `--gradient_accumulation_steps` | Number of gradient accumulation steps                           | `1`               | `int`               |
+| `--learning_rate`           | Max Learning rate for cosine scheduler                          | `0.003`           | `float`             |
+| `--weight_decay`            | Weight decay for optimizer                                      | `0.1`             | `float`             |
+| `--label_smoothing`         | Smooths labels when computing loss                              | `0`               | `float`             |
+| `--custom_weight_init`      | Initialize the model with truncated normal layers               | `False`           | `bool`              |
+| `--bias_weight_decay`       | Apply weight decay to bias                                      | `False`           | `bool`              |
+| `--norm_weight_decay`       | Apply weight decay to normalization weight and bias             | `False`           | `bool`              |
+| `--max_grad_norm`           | Maximum norm for gradient clipping                              | `1.0`             | `float`             |
+| `--img_size`                | Width and Height of frames passed to model                      | `224`             | `int`               |
+| `--num_workers`             | Number of workers for DataLoader                                | `32`              | `int`               |
+| `--adam_beta1`              | Beta1 parameter for Adam optimizer                              | `0.9`             | `float`             |
+| `--adam_beta2`              | Beta2 parameter for Adam optimizer                              | `0.999`           | `float`             |
+| `--adam_epsilon`            | Epsilon parameter for Adam optimizer                            | `1e-8`            | `float`             |
+| `--log_wandb`               | Log metrics to Weights & Biases                                 | `False`           | `bool`              |
+| `--resume_from_checkpoint`  | Checkpoint folder to resume training from                       | **None**          | `str`               |
+| `--top_k`                   | Top-k classes to retrieve during accuracy calculation            | `5`               | `int`               |
+| `--max_no_of_checkpoints`   | Max number of latest checkpoints to store on disk               | `10`              | `int`               |
+| `--n_frames`                | Constant number of frames to extract from each clip             | `8`               | `int`               |
 
 The evaluation metrics include:
-+ **Top-1 Accuracy**: Accuracy of the top prediction.
-+ **Top-k Accuracy**: Accuracy of the top-k predictions.
++ **accuracy@1**: Accuracy of the top prediction.
++ **accuracy@k**: Accuracy of the top-k predictions.
 
+## 🧪 Notebooks
+
+Explore the `inference/` directory for a quick inference demo notebook.
+We also provide simple, interactive gradio demo.

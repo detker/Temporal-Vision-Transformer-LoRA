@@ -18,58 +18,56 @@ from src.model import VisionTransformer, ViTConfig
 from src.utils import (VideoFolder,
                        transforms_training,
                        transforms_testing,
-                       mixup_cutmix_collate_func,
                        accuracy,
                        map_state_dict)
 
 
 def add_arguments(parser):
-    parser.add_argument("--experiment_name",
-                        help="Name of Experiment being Launched",
+    parser.add_argument('--experiment_name',
+                        help='Name of experiment',
                         required=True,
                         type=str)
 
-    parser.add_argument("--path_to_data",
-                        help="Path to UCF101 root folder which should contain \train and \val folders",
+    parser.add_argument('--path_to_data',
+                        help='Path to UCF101 root folder which should contain \train and \val folders',
                         required=True,
                         type=str)
 
-    parser.add_argument("--working_directory",
-                        help="Working Directory where checkpoints and logs are stored, inside a \
-                        folder labeled by the experiment name",
+    parser.add_argument('--working_directory',
+                        help='Working Directory folder name where experiments'' checkpoints and logs are stored',
                         required=True,
                         type=str)
 
-    parser.add_argument("--checkpoint_dir",
-                        help="Working Directory where checkpoints and logs are stored, inside a \
-                        folder labeled by the experiment name",
+    parser.add_argument('--checkpoint_dir',
+                        help='Name of the folder where checkpoints are stored, inside a \
+                        folder labeled by the experiment name',
                         required=True,
                         type=str)
 
-    parser.add_argument("--hf_model_name",
-                        help="Base Google's ViT HF model name",
+    parser.add_argument('--hf_model_name',
+                        help='Base Google\'s ViT HF model name',
                         required=True,
                         type=str)
 
     parser.add_argument('--lora_rank',
                         type=int,
                         default=8,
-                        help='Rank of the LoRA adaptation matrices.')
+                        help='Rank of the LoRA adaptation matrices')
 
     parser.add_argument('--lora_alpha',
                         type=int,
                         default=8,
-                        help='Alpha scaling factor for LoRA.')
+                        help='LoRA Alpha scaling factor')
 
     parser.add_argument('--lora_use_rslora',
                         action=argparse.BooleanOptionalAction,
                         default=False,
-                        help='Whether to use RS-LoRA.')
+                        help='Whether to use RS-LoRA')
 
     parser.add_argument('--lora_dropout',
                         type=float,
                         default=0.1,
-                        help='Dropout rate for LoRA layers.')
+                        help='Dropout rate for LoRA')
 
     parser.add_argument('--lora_bias',
                         type=str,
@@ -85,118 +83,103 @@ def add_arguments(parser):
                         type=lambda x: [s.strip() for s in x.split(',')],
                         help='Comma-separated list of modules to exclude from LoRA.')
 
-    parser.add_argument("--epochs",
-                        help="Number of Epochs to Train",
+    parser.add_argument('--epochs',
+                        help='Number of epochs',
                         default=300,
                         type=int)
 
-    parser.add_argument("--warmup_epochs",
-                        help="Number of warmup Epochs",
+    parser.add_argument('--warmup_epochs',
+                        help='Number of warmup epochs',
                         default=30,
                         type=int)
 
-    parser.add_argument("--save_checkpoint_interval",
-                        help="After how many epochs to save model checkpoints",
+    parser.add_argument('--save_checkpoint_interval',
+                        help='After how many epochs to save model checkpoints',
                         default=1,
                         type=int)
 
-    parser.add_argument("--per_gpu_batch_size",
-                        help="Effective batch size. If split_batches is false, batch size is \
-                            multiplied by number of GPUs utilized ",
+    parser.add_argument('--per_gpu_batch_size',
+                        help='Batch size per GPU',
                         default=256,
                         type=int)
 
-    parser.add_argument("--gradient_accumulation_steps",
-                        help="Number of Gradient Accumulation Steps for Training",
+    parser.add_argument('--gradient_accumulation_steps',
+                        help='Number of gradient accumulation steps',
                         default=1,
                         type=int)
 
-    parser.add_argument("--learning_rate",
-                        help="Max Learning rate for cosine scheduler",
+    parser.add_argument('--learning_rate',
+                        help='Max learning rate for cosine scheduler',
                         default=0.003,
                         type=float)
 
-    parser.add_argument("--weight_decay",
-                        help="Weight decay for optimizer",
+    parser.add_argument('--weight_decay',
+                        help='Weight decay for optimizer',
                         default=0.1,
                         type=float)
 
-    parser.add_argument("--random_aug_magnitude",
-                        help="Magnitude of random augments, if 0 the no random augment will be applied",
-                        default=9,
-                        type=int)
-
-    parser.add_argument("--mixup_alpha",
-                        help="Alpha parameter for Beta distribution from which mixup lambda is sampled",
-                        default=1.0,
-                        type=float)
-
-    parser.add_argument("--cutmix_alpha",
-                        help="Alpha parameter for Beta distribution from which cutmix lambda is samples",
-                        default=1.0,
-                        type=float)
-
-    parser.add_argument("--label_smoothing",
-                        help="smooths labels when computing loss, mix between ground truth and uniform",
+    parser.add_argument('--label_smoothing',
+                        help='Smooths labels when computing loss',
                         default=0,
                         type=float)
 
-    parser.add_argument("--custom_weight_init",
-                        help="Do you want to initialize the model with truncated normal layers?",
+    parser.add_argument('--custom_weight_init',
+                        help='Whether to initialize the model with truncated normal layers',
                         default=False,
                         action=argparse.BooleanOptionalAction)
 
-    parser.add_argument("--bias_weight_decay",
-                        help="Apply weight decay to bias",
+    parser.add_argument('--bias_weight_decay',
+                        help='Whether to apply weight decay to bias',
                         default=False,
                         action=argparse.BooleanOptionalAction)
 
-    parser.add_argument("--norm_weight_decay",
-                        help="Apply weight decay to normalization weight and bias",
+    parser.add_argument('--norm_weight_decay',
+                        help='Whether to apply weight decay to normalization weight and bias',
                         default=False,
                         action=argparse.BooleanOptionalAction)
 
-    parser.add_argument("--max_grad_norm",
-                        help="Maximum norm for gradient clipping",
+    parser.add_argument('--max_grad_norm',
+                        help='Maximum norm for gradient clipping',
                         default=1.0,
                         type=float)
 
-    parser.add_argument("--img_size",
-                        help="Width and Height of Images passed to model",
+    parser.add_argument('--img_size',
+                        help='Width and Height of frames',
                         default=224,
                         type=int)
 
-    parser.add_argument("--num_workers",
-                        help="Number of workers for DataLoader",
+    parser.add_argument('--num_workers',
+                        help='Number of workers for DataLoader',
                         default=32,
                         type=int)
 
     parser.add_argument('--adam_beta1',
                         type=float,
                         default=0.9,
-                        help='Beta1 parameter for Adam optimizer.')
+                        help='Beta1 parameter for Adam optimizer')
 
     parser.add_argument('--adam_beta2',
                         type=float,
                         default=0.999,
-                        help='Beta2 parameter for Adam optimizer.')
+                        help='Beta2 parameter for Adam optimizer')
 
     parser.add_argument('--adam_epsilon',
                         type=float,
                         default=1e-8,
-                        help='Epsilon parameter for Adam optimizer.')
+                        help='Epsilon parameter for Adam optimizer')
 
-    parser.add_argument("--log_wandb",
+    parser.add_argument('--log_wandb',
                         action=argparse.BooleanOptionalAction,
-                        default=False)
+                        default=False,
+                        help='Log metrics to Weight & Biases')
 
-    parser.add_argument("--resume_from_checkpoint",
-                        help="Checkpoint folder for model to resume training from, inside the experiment/checkpoints folder",
+    parser.add_argument('--resume_from_checkpoint',
+                        help='Checkpoint folder for model to resume training from, inside the experiment/checkpoints folder',
                         default=None,
                         type=str)
 
     parser.add_argument('--top_k',
-                        help='Top k classes to retrieve while accuracy calculation',
+                        help='Top-k classes to retrieve during accuracy calculation',
                         default=5,
                         type=int)
 
@@ -221,18 +204,14 @@ accelerator = Accelerator(project_dir=experiment_path,
                           log_with='wandb' if args.log_wandb else None)
 
 if args.log_wandb:
-    experiment_config = {"epochs": args.epochs,
-                         "effective_batch_size": args.per_gpu_batch_size*accelerator.num_processes,
-                         "learning_rate": args.learning_rate,
-                         "warmup_epochs": args.warmup_epochs,
-                         "rand_augment": args.random_aug_magnitude,
-                         "cutmix_alpha": args.cutmix_alpha,
-                         "mixup_alpha": args.mixup_alpha,
-                         "custom_weight_init": args.custom_weight_init}
+    experiment_config = {'epochs': args.epochs,
+                         'effective_batch_size': args.per_gpu_batch_size*accelerator.num_processes,
+                         'learning_rate': args.learning_rate,
+                         'warmup_epochs': args.warmup_epochs,
+                         'custom_weight_init': args.custom_weight_init}
     accelerator.init_trackers(args.experiment_name, config=experiment_config)
 
-transforms_training = transforms_training(img_wh=args.img_size,
-                                          random_aug_magnitude=args.random_aug_magnitude)
+transforms_training = transforms_training(img_wh=args.img_size)
 transforms_testing = transforms_testing(img_wh=args.img_size)
 
 train_data = VideoFolder(os.path.join(experiment_path, args.path_to_data, 'train'),
@@ -244,21 +223,15 @@ test_data = VideoFolder(os.path.join(experiment_path, args.path_to_data, 'test')
 
 num_classes = len(train_data.idx2class.keys())
 
-collate_fn = mixup_cutmix_collate_func(mixup_alpha=args.mixup_alpha,
-                                       cutmix_alpha=args.cutmix_alpha,
-                                       num_classes=num_classes)
-
 minibatch_size = args.per_gpu_batch_size // args.gradient_accumulation_steps
 trainloader = DataLoader(train_data,
                          batch_size=minibatch_size,
                          shuffle=True,
-                         collate_fn=collate_fn,
                          num_workers=args.num_workers,
                          pin_memory=True)
 testloader = DataLoader(test_data,
                         batch_size=minibatch_size,
                         shuffle=False,
-                        collate_fn=collate_fn,
                         num_workers=args.num_workers,
                         pin_memory=True)
 accelerator.print('Data Loaded.')
@@ -404,13 +377,13 @@ for epoch in range(starting_epoch, args.epochs):
     accelerator.print(f'Testing Loss: {epoch_test_loss:.5f} | Testing Top1 Accuracy: {epoch_test_top1_acc:.5f} | Testing Top{args.top_k} Accuracy: {epoch_test_topk_acc:.5f}.')
 
     if args.log_wandb:
-        accelerator.log({"training_loss": epoch_train_loss,
-                         "testing_loss": epoch_test_loss,
-                         "training_top1_acc": epoch_train_top1_acc,
-                         "training_topk_acc": epoch_train_topk_acc,
-                         "testing_top1_acc": epoch_test_top1_acc,
-                         "testing_topk_acc": epoch_test_topk_acc,
-                         "lr": scheduler.get_last_lr()[0]}, step=epoch)
+        accelerator.log({'training_loss': epoch_train_loss,
+                         'testing_loss': epoch_test_loss,
+                         'training_top1_acc': epoch_train_top1_acc,
+                         'training_topk_acc': epoch_train_topk_acc,
+                         'testing_top1_acc': epoch_test_top1_acc,
+                         'testing_topk_acc': epoch_test_topk_acc,
+                         'lr': scheduler.get_last_lr()[0]}, step=epoch)
 
     if epoch % args.save_checkpoint_interval == 0:
         checkpoints_path = os.path.join(experiment_path, args.checkpoint_dir)

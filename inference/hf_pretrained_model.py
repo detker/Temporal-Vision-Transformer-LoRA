@@ -1,8 +1,9 @@
 import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from transformers import PretrainedConfig, PreTrainedModel
 
-sys.path.append('../')
 from src.model import VisionTransformer
 
 class TemporalViTConfig(PretrainedConfig):

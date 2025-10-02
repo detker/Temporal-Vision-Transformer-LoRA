@@ -6,7 +6,7 @@ import torch
 from torchvision.transforms import v2
 from torchvision.transforms import Compose
 from torchvision.transforms.functional import InterpolationMode
-from torch.utils.data import default_collate, Dataset
+from torch.utils.data import Dataset
 
 
 IMAGENET_MEANS = [0.485, 0.456, 0.406]
@@ -14,7 +14,22 @@ IMAGENET_STDS = [0.229, 0.224, 0.225]
 
 
 class VideoFolder(Dataset):
-    def __init__(self, path_to_data, transform=None, frames_n=16, fps=4):
+    """
+    A torch.utils.data.Dataset child for loading video data from a folder structure.
+
+    :param path_to_data: Path to the root directory containing video data.
+    :type path_to_data: str
+    :param transform: Transformations to apply to the video frames.
+    :type transform: torchvision.transforms.Compose or None
+    :param frames_n: Number of frames to sample from each video.
+    :type frames_n: int
+    :param fps: Frames per second to sample from the video.
+    :type fps: int
+    """
+    def __init__(self, path_to_data,
+                 transform=None,
+                 frames_n=16,
+                 fps=4):
         super().__init__()
         self.path_to_data = path_to_data
         self.transform = transform
@@ -32,9 +47,23 @@ class VideoFolder(Dataset):
                 self.paths_to_clips.append((v, os.path.join(path_to_class, clip)))
 
     def __len__(self):
+        """
+        Returns the total number of video clips in the dataset.
+
+        :return: Number of video clips.
+        :rtype: int
+        """
         return len(self.paths_to_clips)
 
     def __getitem__(self, idx):
+        """
+        Retrieves a video clip and its corresponding label.
+
+        :param idx: Index of the video clip.
+        :type idx: int
+        :return: A tuple containing the video frames and the label.
+        :rtype: (torch.Tensor, int)
+        """
         label, vid_path = self.paths_to_clips[idx]
         cap = cv2.VideoCapture(vid_path)
 
@@ -75,6 +104,22 @@ def transforms_testing(img_wh=224,
                        img_mean=IMAGENET_MEANS,
                        img_std=IMAGENET_STDS,
                        interpolation=InterpolationMode.BILINEAR):
+    """
+    Returns a transformation pipeline for testing.
+
+    :param img_wh: Width and height of the cropped image.
+    :type img_wh: int
+    :param resize_wh: Width and height to resize the image before cropping.
+    :type resize_wh: int
+    :param img_mean: Mean values for normalization.
+    :type img_mean: list[float]
+    :param img_std: Standard deviation values for normalization.
+    :type img_std: list[float]
+    :param interpolation: Interpolation mode for resizing.
+    :type interpolation: torchvision.transforms.functional.InterpolationMode
+    :return: A composition of transformations.
+    :rtype: torchvision.transforms.Compose
+    """
     return Compose([
         v2.Resize((resize_wh, resize_wh), interpolation=interpolation, antialias=True),
         v2.CenterCrop((img_wh, img_wh)),
@@ -87,8 +132,23 @@ def transforms_training(img_wh=224,
                        img_mean=IMAGENET_MEANS,
                        img_std=IMAGENET_STDS,
                        interpolation=InterpolationMode.BILINEAR,
-                       horizontal_flip_prob=0.5,
-                       random_aug_magnitude=9):
+                       horizontal_flip_prob=0.5):
+    """
+    Returns a transformation pipeline for training.
+
+    :param img_wh: Width and height of the cropped image.
+    :type img_wh: int
+    :param img_mean: Mean values for normalization.
+    :type img_mean: list[float]
+    :param img_std: Standard deviation values for normalization.
+    :type img_std: list[float]
+    :param interpolation: Interpolation mode for resizing.
+    :type interpolation: torchvision.transforms.functional.InterpolationMode
+    :param horizontal_flip_prob: Probability of applying horizontal flip.
+    :type horizontal_flip_prob: float
+    :return: A composition of transformations.
+    :rtype: torchvision.transforms.Compose
+    """
     return Compose([
         v2.RandomResizedCrop((img_wh, img_wh), interpolation=interpolation, antialias=True),
         v2.RandomHorizontalFlip(horizontal_flip_prob) if horizontal_flip_prob > 0 else v2.Identity(),
@@ -101,28 +161,37 @@ def transforms_training(img_wh=224,
 def transform_inference(img_wh=224,
                         interpolation=InterpolationMode.BILINEAR,
                         resize_wh=256):
+    """
+    Returns a transformation pipeline for inference.
+
+    :param img_wh: Width and height of the cropped image.
+    :type img_wh: int
+    :param interpolation: Interpolation mode for resizing.
+    :type interpolation: torchvision.transforms.functional.InterpolationMode
+    :param resize_wh: Width and height to resize the image before cropping.
+    :type resize_wh: int
+    :return: A composition of transformations.
+    :rtype: torchvision.transforms.Compose
+    """
     return Compose([
         v2.Resize((resize_wh, resize_wh), interpolation=interpolation, antialias=True),
         v2.CenterCrop((img_wh, img_wh)),
         v2.PILToTensor()
     ])
 
-def mixup_cutmix_collate_func(mixup_alpha=0.2,
-                              cutmix_alpha=1.0,
-                              num_classes=1000):
-    transform_list = [
-        v2.MixUp(alpha=mixup_alpha, num_classes=num_classes) if mixup_alpha > 0 else v2.Identity(),
-        v2.CutMix(alpha=cutmix_alpha, num_classes=num_classes) if cutmix_alpha > 0 else v2.Identity(),
-    ]
-    transform = v2.RandomChoice(transform_list)
+def map_state_dict(my_statedict,
+                   hf_statedict):
+    """
+    Maps state dictionary keys from a Hugging Face model to a custom model.
 
-    def collate_fn(examples):
-        videos, labels = default_collate(examples)
-        return videos, labels
-
-    return collate_fn
-
-def map_state_dict(my_statedict, hf_statedict):
+    :param my_statedict: State dictionary of the custom model.
+    :type my_statedict: dict
+    :param hf_statedict: State dictionary of the Hugging Face model.
+    :type hf_statedict: dict
+    :return: Updated state dictionary for the custom model.
+    :rtype: dict
+    :raises Exception: If a key in the mapping is not found in the custom model's state dictionary.
+    """
     mapping = {
         'embeddings.cls_token': 'cls_token',
         'embeddings.position_embeddings': 'pos_embed',
@@ -168,6 +237,18 @@ def map_state_dict(my_statedict, hf_statedict):
 def accuracy(outputs,
              labels,
              top_k=5):
+    """
+    Computes the top-1 and top-k accuracy for a batch of predictions.
+
+    :param outputs: Model predictions of shape (batch_size, num_classes).
+    :type outputs: torch.Tensor
+    :param labels: Ground truth labels of shape (batch_size,) or (batch_size, num_classes).
+    :type labels: torch.Tensor
+    :param top_k: Number of top predictions to consider for top-k accuracy.
+    :type top_k: int
+    :return: Top-1 accuracy and top-k accuracy.
+    :rtype: (float, float)
+    """
     batch_size = outputs.shape[0]
     with torch.no_grad():
         if len(labels.shape) == 2:
