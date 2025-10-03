@@ -10,16 +10,15 @@
 - [Overview](#overview)
 - [Setup & Usage](#setup-&-usage)
 - [Training](#training)
-- [Evaluation](#evaluation)
-- [Experiments](#experiments)
+- [Notebooks](#notebooks)
 
 ## 🔎 Overview
 
 This repository contains the implementation of a Vision Transformer (ViT) model from scratch fine-tuned with LoRA (Low-Rank Adaptation) for temporal video classification on the UCF101 dataset. The project leverages Hugging Face's `accelerate` framework for efficient training and evaluation.
 
 ### Key Features
-- **LoRA Integration**: Efficient fine-tuning of large models with low-rank adaptation.
 - **Temporal Video Classification**: Handles video data with temporal dynamics.
+- **LoRA Integration**: Efficient fine-tuning of large models with low-rank adaptation.
 - **Customizable Training**: Supports various hyperparameters and configurations.
 - **Distributed Data Parallelism**: Training can be performed on a multi-GPU setup using the `accelerate` library.
 - **Ready-to-Go Inference**: Supports loading model through Hugging Face's `transformers` library
@@ -108,8 +107,6 @@ chmod +x train_script.sh
 ./train_script.sh
 ```
 
-Checkpoints are saved periodically in the `{working_directory}/{experiment_name}/{checkpoint_dir}` directory.
-
 Training parameters include:
 
 | **Parameter**               | **Description**                                                 | **Default**       | **Type**            |
@@ -148,6 +145,10 @@ Training parameters include:
 | `--top_k`                   | Top-k classes to retrieve during accuracy calculation            | `5`               | `int`               |
 | `--max_no_of_checkpoints`   | Max number of latest checkpoints to store on disk               | `10`              | `int`               |
 | `--n_frames`                | Constant number of frames to extract from each clip             | `8`               | `int`               |
+
+
+Checkpoints are saved periodically in the `{working_directory}/{experiment_name}/{checkpoint_dir}` directory.
+
 
 The evaluation metrics include:
 + **accuracy@1**: Accuracy of the top prediction.
