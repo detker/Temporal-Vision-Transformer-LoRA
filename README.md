@@ -1,4 +1,4 @@
-# Temporal Visual Transformer with LoRA - UCF101 Training
+# Temporal Vision Transformer with LoRA - UCF101 Training
 
 [![Hugging Face Model](https://img.shields.io/badge/HuggingFace-Model%20Weights-blue)](https://huggingface.co/detker/temporal-vit-85M)
 
