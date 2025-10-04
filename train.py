@@ -347,10 +347,6 @@ for epoch in range(starting_epoch, args.epochs):
 
             pbar.update(1)
 
-<<<<<<< HEAD
-=======
-
->>>>>>> f0a41e8 (RVQVAE-ResNet50 training script:))
     pbar.close()
     model.eval()
     for batch in testloader:
